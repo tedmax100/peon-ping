@@ -1880,6 +1880,7 @@ IDE_ALIASES = {
     'windsurf': 'windsurf',
     'kimi': 'kimi',
     'antigravity': 'antigravity',
+    'agy': 'antigravity',
     'amp': 'amp',
     'deepagents': 'deepagents',
     'deep-agents': 'deepagents',
@@ -2266,6 +2267,14 @@ if ag_dir:
                      'com.peonping.antigravity-py-adapter.plist'),
         os.path.join(claude_hooks_dir, '.antigravity-py-adapter.pid'),
     ))
+    ag_hooks = os.path.join(home, '.gemini', 'config', 'hooks.json')
+    if not ag_installed and os.path.exists(ag_hooks):
+        try:
+            ag_text = open(ag_hooks).read()
+            if any(k in ag_text for k in ('agy.sh', 'antigravity.sh', 'agy.ps1', 'antigravity.ps1')):
+                ag_installed = True
+        except Exception:
+            pass
     ides.append(('Antigravity', ag_dir,
                  'installed' if ag_installed else 'detected (not set up)'))
 
@@ -3081,7 +3090,7 @@ IDE_ALIASES = {
     'codex': 'codex', 'openai-codex': 'codex', 'openai_codex': 'codex',
     'cursor': 'cursor', 'opencode': 'opencode', 'open-code': 'opencode', 'open_code': 'opencode',
     'kilo': 'kilo', 'kiro': 'kiro', 'gemini': 'gemini', 'copilot': 'copilot', 'windsurf': 'windsurf',
-    'kimi': 'kimi', 'antigravity': 'antigravity', 'amp': 'amp', 'deepagents': 'deepagents',
+    'kimi': 'kimi', 'antigravity': 'antigravity', 'agy': 'antigravity', 'amp': 'amp', 'deepagents': 'deepagents',
     'deep-agents': 'deepagents', 'deep_agents': 'deepagents', 'openclaw': 'openclaw',
     'open-claw': 'openclaw', 'open_claw': 'openclaw', 'rovodev': 'rovodev', 'rovo': 'rovodev',
     'grok': 'grok', 'grok-build': 'grok',
@@ -3152,7 +3161,7 @@ IDE_ALIASES = {
     'codex': 'codex', 'openai-codex': 'codex', 'openai_codex': 'codex',
     'cursor': 'cursor', 'opencode': 'opencode', 'open-code': 'opencode', 'open_code': 'opencode',
     'kilo': 'kilo', 'kiro': 'kiro', 'gemini': 'gemini', 'copilot': 'copilot', 'windsurf': 'windsurf',
-    'kimi': 'kimi', 'antigravity': 'antigravity', 'amp': 'amp', 'deepagents': 'deepagents',
+    'kimi': 'kimi', 'antigravity': 'antigravity', 'agy': 'antigravity', 'amp': 'amp', 'deepagents': 'deepagents',
     'deep-agents': 'deepagents', 'deep_agents': 'deepagents', 'openclaw': 'openclaw',
     'open-claw': 'openclaw', 'open_claw': 'openclaw', 'rovodev': 'rovodev', 'rovo': 'rovodev',
     'grok': 'grok', 'grok-build': 'grok',
@@ -3194,7 +3203,7 @@ IDE_ALIASES = {
     'codex': 'codex', 'openai-codex': 'codex', 'openai_codex': 'codex',
     'cursor': 'cursor', 'opencode': 'opencode', 'open-code': 'opencode', 'open_code': 'opencode',
     'kilo': 'kilo', 'kiro': 'kiro', 'gemini': 'gemini', 'copilot': 'copilot', 'windsurf': 'windsurf',
-    'kimi': 'kimi', 'antigravity': 'antigravity', 'amp': 'amp', 'deepagents': 'deepagents',
+    'kimi': 'kimi', 'antigravity': 'antigravity', 'agy': 'antigravity', 'amp': 'amp', 'deepagents': 'deepagents',
     'deep-agents': 'deepagents', 'deep_agents': 'deepagents', 'openclaw': 'openclaw',
     'open-claw': 'openclaw', 'open_claw': 'openclaw', 'rovodev': 'rovodev', 'rovo': 'rovodev',
     'grok': 'grok', 'grok-build': 'grok',
@@ -5710,6 +5719,7 @@ IDE_ALIASES = {
     'windsurf': 'windsurf',
     'kimi': 'kimi',
     'antigravity': 'antigravity',
+    'agy': 'antigravity',
     'amp': 'amp',
     'deepagents': 'deepagents',
     'deep-agents': 'deepagents',
@@ -5760,6 +5770,7 @@ def detect_session_ide(source_value, event_payload, session_value):
         ('windsurf-', 'windsurf'),
         ('kimi-', 'kimi'),
         ('antigravity-', 'antigravity'),
+        ('agy-', 'antigravity'),
         ('amp-', 'amp'),
         ('deepagents-', 'deepagents'),
         ('openclaw-', 'openclaw'),

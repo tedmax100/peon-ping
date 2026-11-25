@@ -735,7 +735,7 @@ peon-ping works with any agentic IDE that supports hooks. Adapters translate IDE
 | **Kilo CLI** | Adapter | `bash adapters/kilo.sh` / `powershell adapters/kilo.ps1` ([setup](#kilo-cli-setup)) |
 | **Kiro** | Adapter | Add hook entries pointing to `adapters/kiro.sh` (or `.ps1`) ([setup](#kiro-setup)) |
 | **Windsurf** | Adapter | Add hook entries pointing to `adapters/windsurf.sh` (or `.ps1`) ([setup](#windsurf-setup)) |
-| **Google Antigravity** | Adapter | `bash adapters/antigravity.sh` / `powershell adapters/antigravity.ps1`. For headless / macOS LaunchAgent use, also see `bash adapters/antigravity-py.sh --install` (Python `watchdog` watcher; requires `pip3 install watchdog`). The Python watcher parses `brain/**/transcript.jsonl` for turn boundaries and `cli.log` for permission prompts, giving the same five sounds as Claude Code. Legacy `conversations/*.pb` and `*.db` sessions without a transcript fall back to a 45s idle timer (`ANTIGRAVITY_IDLE_SECONDS`). |
+| **Google Antigravity (agy)** | Built-in (auto-detect) / Adapter | `install.sh` / `install.ps1` auto-registers native lifecycle hooks into `~/.gemini/config/hooks.json`. Manual wiring via `adapters/agy.sh` (or `.ps1` on Windows) ([setup](#google-antigravity-agy-setup)). Also supports background watcher daemon via `bash adapters/antigravity-py.sh --install`. |
 | **Kimi Code** | Adapter | `bash adapters/kimi.sh --install` / `powershell adapters/kimi.ps1 -Install` ([setup](#kimi-code-setup)) |
 | **OpenClaw** | Adapter | Call `adapters/openclaw.sh <event>` (or `openclaw.ps1`) from your OpenClaw skill |
 | **Rovo Dev CLI** | Adapter | Auto-registered by `install.sh` if `~/.rovodev` exists, or add hooks to `~/.rovodev/config.yml` manually ([setup](#rovo-dev-cli-setup)) |
@@ -1055,6 +1055,69 @@ A shell adapter for **Gemini CLI** with full [CESP v1.0](https://github.com/Peon
 - `AfterAgent` → Task completion sound (*"Work, work."*, *"Job's done!"*)
 - `AfterTool` → Success = Silent; `tool_response.error` = Error sound (*"I can't do that."*). Legacy top-level `exit_code`/`stderr` input is also supported.
 - `Notification` → System notification
+
+### Google Antigravity (agy) setup
+
+A shell and PowerShell adapter for **Google Antigravity CLI (`agy`)** supporting native lifecycle hooks with full [CESP v1.0](https://github.com/PeonPing/openpeon) conformance.
+
+**Auto-setup:**
+
+When you run `install.sh` or `install.ps1`, if `~/.gemini/antigravity-cli` (or `~/.gemini/antigravity`) exists, lifecycle hooks are registered automatically in `~/.gemini/config/hooks.json`.
+
+**Manual setup:**
+
+1. Ensure peon-ping is installed (`curl -fsSL https://peonping.com/install | bash`).
+
+2. Add the following configuration to `~/.gemini/config/hooks.json` (global) or `.agents/hooks.json` (workspace):
+
+   ```json
+   {
+     "peon-ping": {
+       "SessionStart": [
+         {
+           "type": "command",
+           "command": "bash ~/.claude/hooks/peon-ping/adapters/agy.sh SessionStart"
+         }
+       ],
+       "PreInvocation": [
+         {
+           "type": "command",
+           "command": "bash ~/.claude/hooks/peon-ping/adapters/agy.sh PreInvocation"
+         }
+       ],
+       "PostToolUse": [
+         {
+           "matcher": "*",
+           "hooks": [
+             {
+               "type": "command",
+               "command": "bash ~/.claude/hooks/peon-ping/adapters/agy.sh PostToolUse"
+             }
+           ]
+         }
+       ],
+       "Stop": [
+         {
+           "type": "command",
+           "command": "bash ~/.claude/hooks/peon-ping/adapters/agy.sh Stop"
+         }
+       ]
+     }
+   }
+   ```
+   > **Windows:** Replace `bash ~/.claude/hooks/peon-ping/adapters/agy.sh <Event>` with `powershell -NoProfile -File %USERPROFILE%\\.claude\\hooks\\peon-ping\\adapters\\agy.ps1 <Event>`.
+
+**Event mapping:**
+- `SessionStart` → Startup sound (*"Ready to work!"*, *"Greetings."*)
+- `PreInvocation` → Task acknowledge sound (*"Right away."*, *"Work, work."*)
+- `PostToolUse` (with error) → Tool error sound (*"I can't do that."*, *"Error!"*)
+- `Stop` → Task complete sound (*"Job's done!"*, *"Work complete."*)
+
+**Daemon Watcher Alternative:**
+If you prefer running a background filesystem watcher monitoring `transcript.jsonl` and `cli.log` (which can also detect tool permission prompts from `cli.log`), you can use:
+```bash
+bash adapters/antigravity-py.sh --install
+```
 
 ### Windsurf setup
 

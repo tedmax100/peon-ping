@@ -220,9 +220,34 @@ if [ "$IS_LOCAL" = true ] && [ "$SETTINGS" != "$GLOBAL_SETTINGS" ]; then
   _remove_peon_hooks "$GLOBAL_SETTINGS"
 fi
 
+# Remove Google Antigravity hooks if ~/.gemini/config/hooks.json exists
+_remove_antigravity_hooks() {
+  local ag_hooks="$HOME/.gemini/config/hooks.json"
+  [ -f "$ag_hooks" ] || return 0
+  python3 -c "
+import json
+p = '$ag_hooks'
+try:
+    with open(p) as f:
+        data = json.load(f)
+    if 'peon-ping' in data:
+        del data['peon-ping']
+        with open(p, 'w') as f:
+            json.dump(data, f, indent=2)
+            f.write('\n')
+        print('Removed Antigravity hooks from ' + p)
+except Exception:
+    pass
+"
+}
+
 # Remove Cursor hooks
 echo "Removing Cursor hooks..."
 _remove_cursor_hooks
+
+# Remove Antigravity hooks
+echo "Removing Antigravity hooks..."
+_remove_antigravity_hooks
 
 # Remove Copilot CLI hooks
 echo "Removing Copilot CLI hooks..."

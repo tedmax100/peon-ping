@@ -626,7 +626,7 @@ peon-ping 适用于任何支持钩子的代理式 IDE。适配器将 IDE 特定�
 | **Kilo CLI** | 适配器 | `bash adapters/kilo.sh` / `powershell adapters/kilo.ps1`（[设置](#kilo-cli-设置)） |
 | **Kiro** | 适配器 | 添加指向 `adapters/kiro.sh`（或 `.ps1`）的钩子条目（[设置](#kiro-设置)） |
 | **Windsurf** | 适配器 | 添加指向 `adapters/windsurf.sh`（或 `.ps1`）的钩子条目（[设置](#windsurf-设置)） |
-| **Google Antigravity** | 适配器 | `bash adapters/antigravity.sh` / `powershell adapters/antigravity.ps1`。无头 / macOS LaunchAgent 场景可用 `bash adapters/antigravity-py.sh --install`（基于 Python `watchdog` 的守护进程，需要 `pip3 install watchdog`）。该守护进程解析 `brain/**/transcript.jsonl` 判断回合边界，并从 `cli.log` 读取权限确认提示，可提供与 Claude Code 相同的五种提示音。没有 transcript 的旧版 `conversations/*.pb` 与 `*.db` 会话则回退到 45 秒空闲计时器（`ANTIGRAVITY_IDLE_SECONDS`）。 |
+| **Google Antigravity (agy)** | 内置（自动检测） / 适配器 | `install.sh` / `install.ps1` 自动在 `~/.gemini/config/hooks.json` 注册原生生命周期钩子。也可通过 `adapters/agy.sh`（Windows 为 `.ps1`）手动接入（[设置](#google-antigravity-agy-设置)）。亦支持背景监听守护进程 `bash adapters/antigravity-py.sh --install`。 |
 | **Kimi Code** | 适配器 | `bash adapters/kimi.sh --install` / `powershell adapters/kimi.ps1 -Install`（[设置](#kimi-code-设置)） |
 | **OpenClaw** | 适配器 | 调用 `adapters/openclaw.sh <event>`（或 `openclaw.ps1`），支持所有 CESP 分类和原生 Claude Code 事件名 |
 | **Rovo Dev CLI** | 适配器 | 如果 `~/.rovodev` 存在，`install.sh` 会自动注册，或手动添加钩子到 `~/.rovodev/config.yml`（[设置](#rovo-dev-cli-设置)） |
@@ -937,6 +937,69 @@ curl -fsSL https://raw.githubusercontent.com/PeonPing/peon-ping/main/adapters/ki
 - `AfterAgent` → 任务完成音效（*"干活，干活。"*、*"完成了！"*）
 - `AfterTool`（成功）→ 静音；`tool_response.error` → 错误音效（*"我做不到。"*）。也支持旧版顶层 `exit_code`/`stderr` 输入。
 - `Notification` → 系统通知
+
+### Google Antigravity (agy) 设置
+
+[Google Antigravity CLI (`agy`)](https://antigravity.google) 的 shell / PowerShell 适配器，支持原生生命周期钩子，完全符合 [CESP v1.0](https://github.com/PeonPing/openpeon) 规范。
+
+**自动安装：**
+
+运行 `install.sh` 或 `install.ps1` 时，若检测到 `~/.gemini/antigravity-cli`（或 `~/.gemini/antigravity`），会自动在 `~/.gemini/config/hooks.json` 中注册生命周期钩子。
+
+**手动设置：**
+
+1. 确保已安装 peon-ping（`curl -fsSL https://peonping.com/install | bash`）。
+
+2. 将以下配置添加到 `~/.gemini/config/hooks.json`（全局）或 `.agents/hooks.json`（项目目录）：
+
+   ```json
+   {
+     "peon-ping": {
+       "SessionStart": [
+         {
+           "type": "command",
+           "command": "bash ~/.claude/hooks/peon-ping/adapters/agy.sh SessionStart"
+         }
+       ],
+       "PreInvocation": [
+         {
+           "type": "command",
+           "command": "bash ~/.claude/hooks/peon-ping/adapters/agy.sh PreInvocation"
+         }
+       ],
+       "PostToolUse": [
+         {
+           "matcher": "*",
+           "hooks": [
+             {
+               "type": "command",
+               "command": "bash ~/.claude/hooks/peon-ping/adapters/agy.sh PostToolUse"
+             }
+           ]
+         }
+       ],
+       "Stop": [
+         {
+           "type": "command",
+           "command": "bash ~/.claude/hooks/peon-ping/adapters/agy.sh Stop"
+         }
+       ]
+     }
+   }
+   ```
+   > **Windows：** 将 `bash ~/.claude/hooks/peon-ping/adapters/agy.sh <Event>` 替换为 `powershell -NoProfile -File %USERPROFILE%\\.claude\\hooks\\peon-ping\\adapters\\agy.ps1 <Event>`。
+
+**事件映射：**
+- `SessionStart` → 问候/启动音效（*"准备好了吗？"*、*"是的？"*）
+- `PreInvocation` → 接受任务确认音效（*"马上就去。"*、*"干活，干活。"*）
+- `PostToolUse`（含错误）→ 工具错误音效（*"我做不到。"*、*"发生错误！"*）
+- `Stop` → 任务完成音效（*"完成了！"*、*"工作完成。"*）
+
+**守护进程模式备选：**
+若希望使用背景文件监听守护进程（监控 `transcript.jsonl` 与 `cli.log`，并额外捕获工具确认弹窗提示），可运行：
+```bash
+bash adapters/antigravity-py.sh --install
+```
 
 ### Windsurf 设置
 

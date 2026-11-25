@@ -661,6 +661,7 @@ else
   curl -fsSL "$REPO_BASE/adapters/antigravity.sh" -o "$INSTALL_DIR/adapters/antigravity.sh" 2>/dev/null || true
   curl -fsSL "$REPO_BASE/adapters/antigravity-py.sh" -o "$INSTALL_DIR/adapters/antigravity-py.sh" 2>/dev/null || true
   curl -fsSL "$REPO_BASE/adapters/antigravity-watcher.py" -o "$INSTALL_DIR/adapters/antigravity-watcher.py" 2>/dev/null || true
+  curl -fsSL "$REPO_BASE/adapters/agy.sh" -o "$INSTALL_DIR/adapters/agy.sh" 2>/dev/null || true
   curl -fsSL "$REPO_BASE/adapters/gemini.sh" -o "$INSTALL_DIR/adapters/gemini.sh" 2>/dev/null || true
   curl -fsSL "$REPO_BASE/adapters/openclaw.sh" -o "$INSTALL_DIR/adapters/openclaw.sh" 2>/dev/null || true
   curl -fsSL "$REPO_BASE/adapters/opencode.sh" -o "$INSTALL_DIR/adapters/opencode.sh" 2>/dev/null || true
@@ -1609,6 +1610,55 @@ with open(hooks_file, 'w') as f:
 
 events = ['session.start', 'session.end', 'task.complete', 'input.required', 'task.error', 'tool.error', 'user.prompt', 'permission.request', 'compact']
 print('  Hooks registered for: ' + ', '.join(events))
+"
+fi
+
+# --- Auto-detect Google Antigravity (agy) and register hooks ---
+AG_DIR="$HOME/.gemini/antigravity-cli"
+[ -d "$AG_DIR" ] || AG_DIR="$HOME/.gemini/antigravity"
+[ -d "$AG_DIR" ] || AG_DIR="$HOME/.gemini/antigravity-ide"
+AG_CONFIG_DIR="$HOME/.gemini/config"
+AG_HOOKS_FILE="$AG_CONFIG_DIR/hooks.json"
+AG_ADAPTER="$INSTALL_DIR/adapters/agy.sh"
+
+if [ -d "$AG_DIR" ] && [ -f "$AG_ADAPTER" ]; then
+  echo ""
+  echo "Detected Google Antigravity (agy) installation, registering hooks..."
+
+  python3 -c "
+import json, os
+
+hooks_file = '$(py_path "$AG_HOOKS_FILE")'
+adapter_cmd = '$(py_path "$AG_ADAPTER")'
+
+if os.path.exists(hooks_file):
+    try:
+        with open(hooks_file) as f:
+            data = json.load(f)
+    except Exception:
+        data = {}
+else:
+    data = {}
+
+if not isinstance(data, dict):
+    data = {}
+
+data['peon-ping'] = {
+    'SessionStart': [{'type': 'command', 'command': 'bash ' + adapter_cmd + ' SessionStart'}],
+    'PreInvocation': [{'type': 'command', 'command': 'bash ' + adapter_cmd + ' PreInvocation'}],
+    'PostToolUse': [{
+        'matcher': '*',
+        'hooks': [{'type': 'command', 'command': 'bash ' + adapter_cmd + ' PostToolUse'}]
+    }],
+    'Stop': [{'type': 'command', 'command': 'bash ' + adapter_cmd + ' Stop'}]
+}
+
+os.makedirs(os.path.dirname(hooks_file), exist_ok=True)
+with open(hooks_file, 'w') as f:
+    json.dump(data, f, indent=2)
+    f.write('\n')
+
+print('  Hooks registered for: SessionStart, PreInvocation, PostToolUse, Stop')
 "
 fi
 
